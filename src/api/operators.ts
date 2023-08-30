@@ -326,6 +326,32 @@ export const setStrokingRgbColor = (
     asPDFNumber(blue),
   ]);
 
+export const setFillingRgbaColor = (
+  red: number | PDFNumber,
+  green: number | PDFNumber,
+  blue: number | PDFNumber,
+  alpha: number | PDFNumber,
+) =>
+  PDFOperator.of(Ops.NonStrokingColorRgba, [
+    asPDFNumber(red),
+    asPDFNumber(green),
+    asPDFNumber(blue),
+    asPDFNumber(alpha),
+  ]);
+
+export const setStrokingRgbaColor = (
+  red: number | PDFNumber,
+  green: number | PDFNumber,
+  blue: number | PDFNumber,
+  alpha: number | PDFNumber,
+) =>
+  PDFOperator.of(Ops.StrokingColorRgba, [
+    asPDFNumber(red),
+    asPDFNumber(green),
+    asPDFNumber(blue),
+    asPDFNumber(alpha),
+  ]);
+
 export const setFillingCmykColor = (
   cyan: number | PDFNumber,
   magenta: number | PDFNumber,
