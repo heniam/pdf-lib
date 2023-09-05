@@ -1,5 +1,13 @@
-import { PDFOperator, PDFWidgetAnnotation } from 'src/core';
 import PDFFont from 'src/api/PDFFont';
+import {
+  Color,
+  cmyk,
+  componentsToColor,
+  grayscale,
+  rgb,
+  rgba,
+  setFillingColor,
+} from 'src/api/colors';
 import PDFButton from 'src/api/form/PDFButton';
 import PDFCheckBox from 'src/api/form/PDFCheckBox';
 import PDFDropdown from 'src/api/form/PDFDropdown';
@@ -9,30 +17,23 @@ import PDFRadioGroup from 'src/api/form/PDFRadioGroup';
 import PDFSignature from 'src/api/form/PDFSignature';
 import PDFTextField from 'src/api/form/PDFTextField';
 import {
-  drawCheckBox,
-  rotateInPlace,
-  drawRadioButton,
   drawButton,
-  drawTextField,
+  drawCheckBox,
   drawOptionList,
+  drawRadioButton,
+  drawTextField,
+  rotateInPlace,
 } from 'src/api/operations';
+import { setFontAndSize } from 'src/api/operators';
+import { adjustDimsForRotation, reduceRotation } from 'src/api/rotations';
+import { TextAlignment } from 'src/api/text/alignment';
 import {
-  rgb,
-  componentsToColor,
-  setFillingColor,
-  grayscale,
-  cmyk,
-  Color,
-} from 'src/api/colors';
-import { reduceRotation, adjustDimsForRotation } from 'src/api/rotations';
-import {
-  layoutMultilineText,
-  layoutCombedText,
   TextPosition,
+  layoutCombedText,
+  layoutMultilineText,
   layoutSinglelineText,
 } from 'src/api/text/layout';
-import { TextAlignment } from 'src/api/text/alignment';
-import { setFontAndSize } from 'src/api/operators';
+import { PDFOperator, PDFWidgetAnnotation } from 'src/core';
 import { findLastMatch } from 'src/utils';
 
 /*********************** Appearance Provider Types ****************************/
@@ -90,15 +91,15 @@ export type AppearanceMapping<T> = { normal: T; rollover?: T; down?: T };
 type AppearanceOrMapping<T> = T | AppearanceMapping<T>;
 
 // prettier-ignore
-export type AppearanceProviderFor<T extends PDFField> = 
-  T extends PDFCheckBox   ? CheckBoxAppearanceProvider
-: T extends PDFRadioGroup ? RadioGroupAppearanceProvider
-: T extends PDFButton     ? ButtonAppearanceProvider
-: T extends PDFDropdown   ? DropdownAppearanceProvider
-: T extends PDFOptionList ? OptionListAppearanceProvider
-: T extends PDFTextField  ? TextFieldAppearanceProvider
-: T extends PDFSignature  ? SignatureAppearanceProvider
-: never;
+export type AppearanceProviderFor<T extends PDFField> =
+  T extends PDFCheckBox ? CheckBoxAppearanceProvider
+  : T extends PDFRadioGroup ? RadioGroupAppearanceProvider
+  : T extends PDFButton ? ButtonAppearanceProvider
+  : T extends PDFDropdown ? DropdownAppearanceProvider
+  : T extends PDFOptionList ? OptionListAppearanceProvider
+  : T extends PDFTextField ? TextFieldAppearanceProvider
+  : T extends PDFSignature ? SignatureAppearanceProvider
+  : never;
 
 /********************* Appearance Provider Functions **************************/
 
@@ -127,7 +128,7 @@ const getDefaultFontSize = (field: {
 //   `0.3 g` -> ['0.3', 'g']
 //   `0.3 1 .3 rg` -> ['0.3', '1', '.3', 'rg']
 //   `0.3 1 .3 0 k` -> ['0.3', '1', '.3', '0', 'k']
-const colorRegex = /(\d*\.\d+|\d+)[\0\t\n\f\r\ ]*(\d*\.\d+|\d+)?[\0\t\n\f\r\ ]*(\d*\.\d+|\d+)?[\0\t\n\f\r\ ]*(\d*\.\d+|\d+)?[\0\t\n\f\r\ ]+(g|rg|k)/;
+const colorRegex = /(\d*\.\d+|\d+)[\0\t\n\f\r\ ]*(\d*\.\d+|\d+)?[\0\t\n\f\r\ ]*(\d*\.\d+|\d+)?[\0\t\n\f\r\ ]*(\d*\.\d+|\d+)?[\0\t\n\f\r\ ]+(g|rg|ca|k)/;
 
 const getDefaultColor = (field: {
   getDefaultAppearance(): string | undefined;
@@ -142,6 +143,9 @@ const getDefaultColor = (field: {
   }
   if (colorSpace === 'rg' && c1 && c2 && c3) {
     return rgb(Number(c1), Number(c2), Number(c3));
+  }
+  if (colorSpace === 'ca' && c1 && c2 && c3 && c4) {
+    return rgba(Number(c1), Number(c2), Number(c3), Number(c4));
   }
   if (colorSpace === 'k' && c1 && c2 && c3 && c4) {
     return cmyk(Number(c1), Number(c2), Number(c3), Number(c4));
@@ -181,7 +185,7 @@ export const defaultCheckBoxAppearanceProvider: AppearanceProviderFor<PDFCheckBo
 
   const rotate = rotateInPlace({ ...rectangle, rotation });
 
-  const black = rgb(0, 0, 0);
+  const black = rgba(0, 0, 0, 0);
   const borderColor = componentsToColor(ap?.getBorderColor()) ?? black;
   const normalBackgroundColor = componentsToColor(ap?.getBackgroundColor());
   const downBackgroundColor = componentsToColor(ap?.getBackgroundColor(), 0.8);
@@ -263,7 +267,7 @@ export const defaultRadioGroupAppearanceProvider: AppearanceProviderFor<PDFRadio
 
   const rotate = rotateInPlace({ ...rectangle, rotation });
 
-  const black = rgb(0, 0, 0);
+  const black = rgba(0, 0, 0, 0);
   const borderColor = componentsToColor(ap?.getBorderColor()) ?? black;
   const normalBackgroundColor = componentsToColor(ap?.getBackgroundColor());
   const downBackgroundColor = componentsToColor(ap?.getBackgroundColor(), 0.8);
@@ -350,7 +354,7 @@ export const defaultButtonAppearanceProvider: AppearanceProviderFor<PDFButton> =
 
   const rotate = rotateInPlace({ ...rectangle, rotation });
 
-  const black = rgb(0, 0, 0);
+  const black = rgba(0, 0, 0, 0);
 
   const borderColor = componentsToColor(ap?.getBorderColor());
   const normalBackgroundColor = componentsToColor(ap?.getBackgroundColor());
@@ -438,7 +442,7 @@ export const defaultTextFieldAppearanceProvider: AppearanceProviderFor<PDFTextFi
 
   const rotate = rotateInPlace({ ...rectangle, rotation });
 
-  const black = rgb(0, 0, 0);
+  const black = rgba(0, 0, 0, 0);
 
   const borderColor = componentsToColor(ap?.getBorderColor());
   const normalBackgroundColor = componentsToColor(ap?.getBackgroundColor());
@@ -530,7 +534,7 @@ export const defaultDropdownAppearanceProvider: AppearanceProviderFor<PDFDropdow
 
   const rotate = rotateInPlace({ ...rectangle, rotation });
 
-  const black = rgb(0, 0, 0);
+  const black = rgba(0, 0, 0, 0);
 
   const borderColor = componentsToColor(ap?.getBorderColor());
   const normalBackgroundColor = componentsToColor(ap?.getBackgroundColor());
@@ -596,7 +600,7 @@ export const defaultOptionListAppearanceProvider: AppearanceProviderFor<PDFOptio
 
   const rotate = rotateInPlace({ ...rectangle, rotation });
 
-  const black = rgb(0, 0, 0);
+  const black = rgba(0, 0, 0, 0);
 
   const borderColor = componentsToColor(ap?.getBorderColor());
   const normalBackgroundColor = componentsToColor(ap?.getBackgroundColor());
