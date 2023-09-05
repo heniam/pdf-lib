@@ -18,7 +18,6 @@ export default async (assets: Assets) => {
     width: 250,
     height: 25,
     borderWidth: 1,
-    
   });
 
   // Multiline, centered
@@ -38,7 +37,9 @@ export default async (assets: Assets) => {
   // Singleline, right justified
   const singlelineRightTf = form.createTextField('singleline.right.tf');
   singlelineRightTf.setAlignment(TextAlignment.Center);
-  singlelineRightTf.setText('Sum right justified text yo - with traansparent background and border');
+  singlelineRightTf.setText(
+    'Sum right justified text yo - with traansparent background and border',
+  );
   singlelineRightTf.addToPage(page2, {
     y: height - 50,
     x: 300,
@@ -46,10 +47,8 @@ export default async (assets: Assets) => {
     height: 25,
     borderWidth: 1,
     backgroundColor: rgba(0, 0, 0, 0),
-    borderColor: rgba(0, 0, 0, 0)
+    borderColor: rgba(0, 0, 0, 0),
   });
-
-
 
   const pdfBytes = await pdfDoc.save();
   return pdfBytes;
