@@ -14,7 +14,7 @@ export enum ColorTypes {
   Grayscale = 'Grayscale',
   RGB = 'RGB',
   CMYK = 'CMYK',
-  RGBA = 'RGBA'
+  RGBA = 'RGBA',
 }
 
 export interface Grayscale {
@@ -59,7 +59,12 @@ export const rgb = (red: number, green: number, blue: number): RGB => {
   return { type: ColorTypes.RGB, red, green, blue };
 };
 
-export const rgba = (red: number, green: number, blue: number, alpha: number): RGBA => {
+export const rgba = (
+  red: number,
+  green: number,
+  blue: number,
+  alpha: number,
+): RGBA => {
   assertRange(red, 'red', 0, 1);
   assertRange(green, 'green', 0, 1);
   assertRange(blue, 'blue', 0, 1);
